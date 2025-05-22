@@ -5,6 +5,12 @@ from rest_framework import status
 from rest_framework import permissions
 from .models import Todo
 from .serializers import TodoSerializer
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from permissions import IsOwner
+from rest_framework.permissions import IsAuthenticated
+
+authentication_classes = [JWTAuthentication]
+permission_classes = [IsAuthenticated, IsOwner]
 
 # Create your views here.
 class TodoListApiView(APIView):
@@ -13,7 +19,13 @@ class TodoListApiView(APIView):
     def get(self, request, *args, **kwargs):
         todos = Todo.objects.filter(user = request.user.id)
         serializer = TodoSerializer(todos, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        custom_data = {
+            'count': todos.count(),
+            'results': serializer.data,
+            'message': "List of todo items retrieved successfully."
+        }
+        return Response(custom_data, status=status.HTTP_200_OK)
     
     def post(self, request, *args, **kwargs):
         data={
